@@ -175,7 +175,10 @@ def data_augmentation(images):
 	return np.array(images_new)
 
 
-if __name__ == '__main__':
+def demo_pixels():
+	"""
+	create demo pixels
+	"""
 	# format: (batch, height, width, channel)
 	root_dir = os.getcwd()
 	catalysts_dir = os.path.join(root_dir, "./demo_catalysts")
@@ -208,5 +211,8 @@ if __name__ == '__main__':
 
 	with open(os.path.join(root_dir, "data/pixels.pkl"), 'wb') as f:
 		joblib.dump(images, f)  # images is a list of tuple containing name `str` and pixel `np.ndarray`
-
 	print("DONE")
+
+
+if __name__ == '__main__':
+	demo_pixels()

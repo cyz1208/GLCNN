@@ -7,7 +7,6 @@ import pickle
 import warnings
 from get_features import features
 
-
 warnings.filterwarnings("ignore")
 np.set_printoptions(suppress=True)
 
@@ -31,23 +30,24 @@ add_Ns = ['0N', '1N', '2N', '3N']
 class Utils:
 	def __init__(self):
 		super(Utils, self).__init__()
-	
+
 	@staticmethod
 	def draw_graph(g):
 		nx.draw_networkx(g, pos=nx.spring_layout(g))
-		# plt.show()
-	
+
+	# plt.show()
+
 	@staticmethod
 	def load_graphs(filename):
 		with open(filename, 'rb') as f:
 			G = pickle.load(f)
 		return G
-	
+
 	@staticmethod
 	def save_graphs(G, filename):
 		with open(filename, 'wb') as f:
 			pickle.dump(G, f)
-	
+
 	@staticmethod
 	def check_graphs(G):
 		"""
@@ -59,10 +59,12 @@ class Utils:
 				print(i, g.name)
 				del G[i]
 		print('checked graphs: ' + str(len(G)))
-	
+
 	@staticmethod
 	def atomic_distance(i, j):
-		# i,j are pymatgen Site objects
+		"""
+		i,j are pymatgen Site objects
+		"""
 		return (Element(i.specie).atomic_radius + Element(j.specie).atomic_radius) * 1.2
 
 	@staticmethod
@@ -113,14 +115,14 @@ def generate_graph(mesh, add_N, s, e, filepath):
 	# read structure information from POSCAR
 	struct = Poscar.from_file(os.path.join(filepath, 'POSCAR'),
 	                          check_for_POTCAR=False, read_velocities=False).structure
-	
+
 	# initialize graph
 	g = nx.Graph()
 	g.name = mesh + ' ' + add_N + ' ' + s + ' ' + e
-	
+
 	# create features and add it to nodes
 	Utils.add_features(g, struct)
-	
+
 	# create edges and add atom distance as feature to edges
 	for i, site_1 in enumerate(struct.sites):
 		for j, site_2 in enumerate(struct.sites):
@@ -129,9 +131,9 @@ def generate_graph(mesh, add_N, s, e, filepath):
 	return g
 
 
-def generate_graphs():
+def demo_graphs():
 	"""
-	return list of graphs G
+	return list of graphs G using demo catalysts
 	"""
 	root_dir = os.getcwd()
 	catalysts_dir = os.path.join(root_dir, "./demo_catalysts")
@@ -159,13 +161,12 @@ def generate_graphs():
 					g = generate_graph(mesh, add_N, sub, e, file_path_4)
 					G.append(g)
 	print(f"total graphs: {len(G)}")
-	return G
+
+	with open(os.path.join(root_dir, "data/graphs.pkl"), "wb") as f:
+		pickle.dump(G, f)
+	print("DONE")
 
 
 if __name__ == '__main__':
-	root_dir = os.getcwd()
-	G = generate_graphs()
-	with open(os.path.join(root_dir, "data/graphs.pkl"), "wb") as f:
-		pickle.dump(G, f)
-
+	demo_graphs()
 
