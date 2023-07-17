@@ -205,7 +205,7 @@ if __name__ == '__main__':
 	images = data_augmentation(images_origin)
 	print(images.shape, images[0][1].shape)
 
-	with open(os.path.join(root_dir, "./data/pixels.pkl"), 'wb') as f:
+	with open("./data/pixels.pkl", 'wb') as f:
 		joblib.dump(images, f)  # images is a list of tuple containing name `str` and pixel `np.ndarray`
 
 	print("DONE")
