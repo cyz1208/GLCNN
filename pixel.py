@@ -178,10 +178,11 @@ def data_augmentation(images):
 if __name__ == '__main__':
 	# format: (batch, height, width, channel)
 	root_dir = os.getcwd()
+	catalysts_dir = os.path.join(root_dir, "./demo_catalysts")
 
 	images_origin = []
 	for mesh in meshs:
-		file_path_1 = os.path.join(root_dir, mesh)
+		file_path_1 = os.path.join(catalysts_dir, mesh)
 		if not os.path.exists(file_path_1):
 			continue
 		for add_N in add_Ns:
@@ -205,7 +206,7 @@ if __name__ == '__main__':
 	images = data_augmentation(images_origin)
 	print(images.shape, images[0][1].shape)
 
-	with open("./data/pixels.pkl", 'wb') as f:
+	with open(os.path.join(root_dir, "data/pixels.pkl"), 'wb') as f:
 		joblib.dump(images, f)  # images is a list of tuple containing name `str` and pixel `np.ndarray`
 
 	print("DONE")

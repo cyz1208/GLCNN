@@ -134,9 +134,11 @@ def generate_graphs():
 	return list of graphs G
 	"""
 	root_dir = os.getcwd()
+	catalysts_dir = os.path.join(root_dir, "./demo_catalysts")
+
 	G = []
 	for mesh in meshs:
-		file_path_1 = os.path.join(root_dir, mesh)
+		file_path_1 = os.path.join(catalysts_dir, mesh)
 		if not os.path.exists(file_path_1):
 			continue
 		for add_N in add_Ns:
@@ -161,8 +163,9 @@ def generate_graphs():
 
 
 if __name__ == '__main__':
+	root_dir = os.getcwd()
 	G = generate_graphs()
-	with open("./data/graphs.pkl", "wb") as f:
+	with open(os.path.join(root_dir, "data/graphs.pkl"), "wb") as f:
 		pickle.dump(G, f)
 
 
