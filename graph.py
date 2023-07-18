@@ -6,6 +6,7 @@ import os
 import pickle
 import warnings
 from get_features import features
+import argparse
 
 warnings.filterwarnings("ignore")
 np.set_printoptions(suppress=True)
@@ -108,17 +109,20 @@ class Utils:
 		return np.concatenate((feature, fea), axis=0)
 
 
-def generate_graph(mesh, add_N, s, e, filepath):
+def generate_graph(name, filepath, demo=True):
 	"""
-	create graph from POSCAR and POTCAR using pymatgen
+	create graph from POSCAR using pymatgen
 	"""
-	# read structure information from POSCAR
-	struct = Poscar.from_file(os.path.join(filepath, 'POSCAR'),
-	                          check_for_POTCAR=False, read_velocities=False).structure
+	if demo:
+		struct = Poscar.from_file(os.path.join(filepath, 'POSCAR'),
+		                          check_for_POTCAR=False, read_velocities=False).structure
+	else:
+		struct = Poscar.from_file(filepath,
+		                          check_for_POTCAR=False, read_velocities=False).structure
 
 	# initialize graph
 	g = nx.Graph()
-	g.name = mesh + ' ' + add_N + ' ' + s + ' ' + e
+	g.name = name
 
 	# create features and add it to nodes
 	Utils.add_features(g, struct)
@@ -136,7 +140,7 @@ def demo_graphs():
 	return list of graphs G using demo catalysts
 	"""
 	root_dir = os.getcwd()
-	catalysts_dir = os.path.join(root_dir, "./demo_catalysts")
+	catalysts_dir = os.path.join(root_dir, "demo_catalysts")
 
 	G = []
 	for mesh in meshs:
@@ -157,8 +161,7 @@ def demo_graphs():
 						continue
 					print(f"now processing: {file_path_4}")
 
-					# generate graph for one structure
-					g = generate_graph(mesh, add_N, sub, e, file_path_4)
+					g = generate_graph(f"{mesh} {add_N} {sub} {e}", file_path_4, demo=True)
 					G.append(g)
 	print(f"total graphs: {len(G)}")
 
@@ -167,6 +170,32 @@ def demo_graphs():
 	print("DONE")
 
 
-if __name__ == '__main__':
-	demo_graphs()
+def user_graphs():
+	"""
+	return list of graphs G using user catalysts
+	"""
+	root_dir = os.getcwd()
+	catalysts_dir = os.path.join(root_dir, "user_catalysts")
+	catalysts = [i for i in os.listdir(catalysts_dir) if "POSCAR" in i]
 
+	G = []
+	for cat in catalysts:
+		print(f"now processing: {os.path.join(catalysts_dir, cat)}")
+		g = generate_graph(cat, os.path.join(catalysts_dir, cat), demo=False)
+		G.append(g)
+	print(f"total graphs: {len(G)}")
+
+	with open(os.path.join(root_dir, "data/graphs.pkl"), "wb") as f:
+		pickle.dump(G, f)
+	print("DONE")
+
+
+if __name__ == '__main__':
+	parser = argparse.ArgumentParser()
+	parser.add_argument("--demo", action="store_true", help="whether use demo catalysts")
+	args = parser.parse_args()
+
+	if args.demo:
+		demo_graphs()
+	else:
+		user_graphs()

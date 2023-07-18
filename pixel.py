@@ -1,12 +1,13 @@
 import numpy as np
-import joblib
+import pickle
 import matplotlib.pyplot as plt
 import os
 import warnings
 from pymatgen.io.vasp.inputs import Poscar
 from pymatgen.core.periodic_table import Element
 import tensorflow as tf
-from scipy.ndimage.filters import gaussian_filter
+from scipy.ndimage import gaussian_filter
+import argparse
 
 warnings.filterwarnings("ignore")
 
@@ -95,12 +96,16 @@ def add_gaussian_blur(image, sigma=1.5):
 	return tf.concat(decomp_image, axis=-1).numpy()
 
 
-def pixel(filepath, size=(128, 128, 6), grid=0.20, sigma=1.5):
+def pixel(filepath, size=(128, 128, 6), grid=0.20, sigma=1.5, demo=True):
 	"""
 	create pixel image from POSCAR
 	"""
-	struct = Poscar.from_file(os.path.join(filepath, 'POSCAR'),
-	                          check_for_POTCAR=False, read_velocities=False).structure
+	if demo:
+		struct = Poscar.from_file(os.path.join(filepath, 'POSCAR'),
+		                          check_for_POTCAR=False, read_velocities=False).structure
+	else:
+		struct = Poscar.from_file(filepath,
+		                          check_for_POTCAR=False, read_velocities=False).structure
 
 	# expand cell
 	expand_cell(struct, size[:2], grid)
@@ -181,7 +186,7 @@ def demo_pixels():
 	"""
 	# format: (batch, height, width, channel)
 	root_dir = os.getcwd()
-	catalysts_dir = os.path.join(root_dir, "./demo_catalysts")
+	catalysts_dir = os.path.join(root_dir, "demo_catalysts")
 
 	images_origin = []
 	for mesh in meshs:
@@ -202,17 +207,50 @@ def demo_pixels():
 						continue
 					print(f"now processing: {file_path_4}")
 					# create image from POSCAR
-					image = pixel(file_path_4)
+					image = pixel(file_path_4, demo=True)
 					images_origin.append((mesh + ' ' + add_N + ' ' + sub + ' ' + e, image))
 	images_origin = np.array(images_origin)
-	print(images_origin.shape, images_origin[0][1].shape)
+	print(f"original shape: {images_origin.shape}, {images_origin[0][1].shape}")
 	images = data_augmentation(images_origin)
-	print(images.shape, images[0][1].shape)
+	print(f"DA shape: {images.shape}, {images[0][1].shape}")
 
 	with open(os.path.join(root_dir, "data/pixels.pkl"), 'wb') as f:
-		joblib.dump(images, f)  # images is a list of tuple containing name `str` and pixel `np.ndarray`
+		pickle.dump(images, f)  # images is a list of tuple containing name `str` and pixel `np.ndarray`
+	print("DONE")
+
+
+def user_pixels():
+	"""
+	create user pixels
+	"""
+	# format: (batch, height, width, channel)
+	root_dir = os.getcwd()
+	catalysts_dir = os.path.join(root_dir, "user_catalysts")
+	catalysts = [i for i in os.listdir(catalysts_dir) if "POSCAR" in i]
+
+	images_origin = []
+	for cat in catalysts:
+		print(f"now processing: {os.path.join(catalysts_dir, cat)}")
+		# create image from POSCAR
+		image = pixel(os.path.join(catalysts_dir, cat), demo=False)
+		images_origin.append((cat, image))
+	images_origin = np.array(images_origin)
+	print(f"original shape: {images_origin.shape}, {images_origin[0][1].shape}")
+	images = data_augmentation(images_origin)
+	print(f"DA shape: {images.shape}, {images[0][1].shape}")
+
+	with open(os.path.join(root_dir, "data/pixels.pkl"), 'wb') as f:
+		pickle.dump(images, f)  # images is a list of tuple containing name `str` and pixel `np.ndarray`
 	print("DONE")
 
 
 if __name__ == '__main__':
-	demo_pixels()
+	parser = argparse.ArgumentParser()
+	parser.add_argument("--demo", action="store_true", help="whether use demo catalysts")
+	args = parser.parse_args()
+
+	if args.demo:
+		demo_pixels()
+	else:
+		user_pixels()
+
