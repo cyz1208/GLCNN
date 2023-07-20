@@ -81,9 +81,16 @@ python pixel.py --demo
 After generations of grids and descriptors, train and test GLCNN:
 
 ```bash
-python GLCNN.py
+python GLCNN.py --batch=256 --repeat=20 --epoch=200
 ```
-`GLCNN.py` train and test GLCNN using generated inputs `graphs.pkl` and `pixels.pkl`.
+`GLCNN.py` train and test GLCNN using generated inputs `graphs.pkl` and `pixels.pkl`. 
+`--batch`, `--repeat` and `--epoch` denote batch size, DA iterations and epoch to training respectively.
+
+Using:
+```bash
+python GLCNN.py --help
+```
+to get more information.
 
 `out_OH.csv` will be generated after GLCNN training and test, which containing predicted and true values.
 The log of the GLCNN running is recorded in the `log` folder. 

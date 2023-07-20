@@ -169,13 +169,20 @@ def data_process(repeat):
 		X_test_1, X_test_2, aug_y_test, y_origin
 
 
-def build_model():
+def build_model(kernel_nums, kernel_sizes, fc_sizes, dropout_rate):
 	"""
-	model construction
+	model construction.
+	:param kernel_nums: numbers of kernels of each CNN layer
+	:param kernel_sizes: sizes of kernels of  each CNN layer
+	:param fc_sizes: size of each FC layer except for the final FC layer
+	:param dropout_rate: dropout
+	:return: GLCNN model
 	"""
 	Input_1 = tf.keras.layers.Input(shape=(32, 32, 6))
 	Input_2 = tf.keras.layers.Input(shape=(15,))
-	Output = CNN.wide_deep(Input_1, Input_2)
+	Output = CNN.wide_deep(Input_1, Input_2,
+	                       kernel_nums=kernel_nums, kernel_sizes=kernel_sizes,
+	                       fc_sizes=fc_sizes, dropout_rate=dropout_rate)
 	model = tf.keras.Model(inputs=[Input_1, Input_2], outputs=[Output])
 	# model.summary()
 	opt = tf.keras.optimizers.Adam(learning_rate=0.0001)
@@ -259,6 +266,12 @@ if __name__ == '__main__':
 	parser.add_argument("-b", "--batch", type=int, default=256, help="batch size")
 	parser.add_argument("-r", "--repeat", type=int, default=20, help="DA iterations with maximum of 20")
 	parser.add_argument("-e", "--epoch", type=int, default=200, help="epoch of model training")
+
+	parser.add_argument("--kernel_nums", type=tuple, default=(6, 16, 120), help="numbers of each CNN kernel")
+	parser.add_argument("--kernel_sizes", type=tuple, default=(5, 5, 5), help="sizes of each CNN kernel")
+	parser.add_argument("--fc_sizes", type=tuple, default=(2000, 200, 1), help="sizes of each fc layer."
+	                                                                           " for regression task, the last one is 1.")
+	parser.add_argument("--dropout_rate", type=tuple, default=0.2, help="rate of dropout for fc layers.")
 	args = parser.parse_args()
 
 	ROOT_DIR = os.getcwd()
@@ -268,10 +281,17 @@ if __name__ == '__main__':
 	REPEAT = args.repeat
 	EPOCH = args.epoch
 
+	KERNEL_NUMS = args.kernel_nums
+	KERNEL_SIZES = args.kernel_sizes
+	FC_SIZES = args.fc_sizes
+	DROPOUT = args.dropout_rate
+
 	X_train_1, X_train_2, aug_y_train, X_val_1, X_val_2, aug_y_val,\
 		X_test_1, X_test_2, aug_y_test, y_origin = data_process(REPEAT)
 
-	model = build_model()
+	model = build_model(kernel_nums=KERNEL_NUMS, kernel_sizes=KERNEL_SIZES,
+	                    fc_sizes=FC_SIZES, dropout_rate=DROPOUT)
+
 	train_model(model, [X_train_1, X_train_2], aug_y_train,
 	            [X_val_1, X_val_2], aug_y_val,
 	            epoch=EPOCH, batch=BATCH_SIZE, model_ckpt=MODEL_CKPT, log_dir=LOG_DIR)
