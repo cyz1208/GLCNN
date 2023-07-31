@@ -92,6 +92,7 @@ After generations of grids and descriptors, train and test GLCNN:
 ```bash
 python GLCNN.py --demo --batch=256 --repeat=20 --epoch=200
 ```
+
 `GLCNN.py` train and test GLCNN using generated inputs `graphs.pkl` and `pixels.pkl`. 
 `--batch`, `--repeat` and `--epoch` denote batch size, DA iterations and epoch to training respectively.
 `--demo` represents using data in `property_demo.csv` as true values provided by the authors.
