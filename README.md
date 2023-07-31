@@ -68,7 +68,9 @@ python pixel.py
 
 `graph.py` and `pixel.py` generate descriptor and grid inputs named `graphs.pkl` and `pixels.pkl` in `data` folder.
 The user-defined structural files in VASP5.x POSCAR format (element row in file) should be 
-stored in `user_catalysts` folder and named appropriately, e.g., POSCAR_0, POSCAR_1, etc..
+stored in `user_catalysts` folder and named appropriately, e.g., POSCAR_0, POSCAR_1, etc., 
+as shown in `user_catalysts` folder preloaded by authors.
+Users should delete all structural files in `user_catalysts` folder before upload their own ones.
 
 If the users want to train and test GLCNN using demo structures provided in `demo_catalysts` folder,
 run `graph.py` and `pixel.py` with `--demo` flag as following:
@@ -98,7 +100,9 @@ python GLCNN.py --demo --batch=256 --repeat=20 --epoch=200
 `--demo` represents using data in `property_demo.csv` as true values provided by the authors.
 If `--demo` is not added, data in `property_user.csv` will serve as true values, 
 in which `property` column should exist and true values should be included in `property` column.
-The sequence of true values should be consistent with that of filenames in `user_catalysts`, e.g., 0, 1, etc..
+The sequence of true values should be consistent with that of filenames in `user_catalysts`, e.g., 0, 1, etc.,
+as shown in `property_user.csv` file preloaded by authors.
+Users should delete all true values in `property_user.csv` file before write their own ones.
 
 Using:
 ```bash
