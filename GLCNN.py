@@ -1,5 +1,5 @@
 import functools
-import os
+import os, warnings
 import numpy as np
 import pickle
 import pandas as pd
@@ -17,11 +17,11 @@ import argparse
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
-	# Restrict TensorFlow to only allocate 2GB of memory on the first GPU
+	# Restrict TensorFlow to only allocate 6GB of memory on the first GPU
 	try:
 		tf.config.experimental.set_virtual_device_configuration(
 			gpus[0],
-			[tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024 * 6)],
+			# [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024 * 6)],
 		)
 		logical_gpus = tf.config.experimental.list_logical_devices('GPU')
 		print(f"{len(gpus)} Physical GPUs, {len(logical_gpus)} Logical GPUs.")
@@ -81,7 +81,7 @@ def average_pred_y(pred_y):
 
 
 @timer
-def load_data():
+def load_data(demo):
 	"""
 	load DA graphs, grids and outputs
 	"""
@@ -95,7 +95,7 @@ def load_data():
 		# data clean
 		if name.split() in clean_name:
 			continue
-		if '' in name:
+		if '' in name:   # developer mode
 			X_1.append(pixel)
 	print(f"total X_1 data: {np.shape(X_1)}")
 
@@ -105,7 +105,7 @@ def load_data():
 	for g in G:
 		if g.name.split() in clean_name:
 			continue
-		if '' in g.name:
+		if '' in g.name:   # developer mode
 			X_2.append(Utils.get_shells(g))
 	X_2 = np.array(X_2)
 	X_2 = scale(X_2)
@@ -114,25 +114,30 @@ def load_data():
 
 	# DA outputs
 	y = []
-	db = read_csv("./E_OH_all.csv")
-	for _, datum in db.iterrows():
-		# data clean
-		if [datum['mesh'], datum['add_N'], datum['sub'], datum['metal']] in clean_name:
-			continue
-		if '' in datum['mesh']:
-			y.append(datum['E_ads_H'])
+	if demo:
+		db = read_csv("./property_demo.csv")
+		for _, datum in db.iterrows():
+			# data clean
+			if [datum['mesh'], datum['add_N'], datum['sub'], datum['metal']] in clean_name:
+				continue
+			if '' in datum['mesh']:   # developer mode
+				y.append(datum['property'])
+	else:
+		db = read_csv("./property_user.csv")
+		for _, datum in db.iterrows():
+			y.append(datum['property'])
+
 	y = data_augmentation_y(y)
 	print(f"total y data: {np.shape(y)}")
 	return np.array(X_1), np.array(X_2), np.array(y)
 
 
-def data_process(repeat):
+def data_process(repeat, demo):
 	"""
 	split train, validation and test set.
 	"""
 	# load data
-	with tf.device('/CPU:0'):
-		X_1, X_2, aug_y = load_data()
+	X_1, X_2, aug_y = load_data(demo=demo)
 	# X_1 = X_1[:, :, :, [0, 1, 2, 4, 5]]  # select desired channels
 
 	origin_len = int(len(aug_y) / 20)
@@ -258,25 +263,37 @@ def test_model(X_test, y_test, y_origin, model_ckpt, repeat):
 
 	# save predicted and true values
 	df = pd.DataFrame(np.array([y_pred, y_origin]).T, columns=["pred", "test"])
-	df.to_csv("./out_OH.csv", index=False)
+	df.to_csv("./prediction.csv", index=False)
 
 
 if __name__ == '__main__':
+	os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+	warnings.filterwarnings("ignore")
+	np.set_printoptions(suppress=True)
+
 	parser = argparse.ArgumentParser()
+	parser.add_argument("--demo", action="store_true", help="use demo catalysts")
+
 	parser.add_argument("-b", "--batch", type=int, default=256, help="batch size")
 	parser.add_argument("-r", "--repeat", type=int, default=20, help="DA iterations with maximum of 20")
 	parser.add_argument("-e", "--epoch", type=int, default=200, help="epoch of model training")
 
-	parser.add_argument("--kernel_nums", type=tuple, default=(6, 16, 120), help="numbers of each CNN kernel")
-	parser.add_argument("--kernel_sizes", type=tuple, default=(5, 5, 5), help="sizes of each CNN kernel")
-	parser.add_argument("--fc_sizes", type=tuple, default=(2000, 200, 1), help="sizes of each fc layer."
-	                                                                           " for regression task, the last one is 1.")
-	parser.add_argument("--dropout_rate", type=tuple, default=0.2, help="rate of dropout for fc layers.")
+	parser.add_argument("--kernel_nums", type=tuple, default=(6, 16, 120),
+	                    help="numbers of each CNN kernel, e.g., (6, 16, 120).")
+	parser.add_argument("--kernel_sizes", type=tuple, default=(5, 5, 5),
+	                    help="sizes of each CNN kernel, e.g., (5, 5, 5).")
+	parser.add_argument("--fc_sizes", type=tuple, default=(2000, 200, 1),
+	                    help="sizes of each fc layer, e.g., (2000, 200, 1). for regression task, the last one is 1.")
+	parser.add_argument("--dropout_rate", type=tuple, default=0.2,
+	                    help="rate of dropout for fc layers, e.g., 0.2.")
 	args = parser.parse_args()
 
 	ROOT_DIR = os.getcwd()
 	LOG_DIR = os.path.join(ROOT_DIR, "logs", datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 	MODEL_CKPT = os.path.join(ROOT_DIR, "model_opt")
+
+	DEMO = args.demo
+
 	BATCH_SIZE = args.batch
 	REPEAT = args.repeat
 	EPOCH = args.epoch
@@ -287,7 +304,7 @@ if __name__ == '__main__':
 	DROPOUT = args.dropout_rate
 
 	X_train_1, X_train_2, aug_y_train, X_val_1, X_val_2, aug_y_val,\
-		X_test_1, X_test_2, aug_y_test, y_origin = data_process(REPEAT)
+		X_test_1, X_test_2, aug_y_test, y_origin = data_process(REPEAT, demo=DEMO)
 
 	model = build_model(kernel_nums=KERNEL_NUMS, kernel_sizes=KERNEL_SIZES,
 	                    fc_sizes=FC_SIZES, dropout_rate=DROPOUT)

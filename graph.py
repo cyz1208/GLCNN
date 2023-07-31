@@ -8,8 +8,6 @@ import warnings
 from get_features import features
 import argparse
 
-warnings.filterwarnings("ignore")
-np.set_printoptions(suppress=True)
 
 substrates = ['SV', 'SV_1N', 'SV_2N', 'SV_3N',
               'DV', 'DV_1N', 'DV_2N_1', 'DV_2N_2', 'DV_3N', 'DV_4N',
@@ -191,11 +189,16 @@ def user_graphs():
 
 
 if __name__ == '__main__':
+	os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+	warnings.filterwarnings("ignore")
+	np.set_printoptions(suppress=True)
+
 	parser = argparse.ArgumentParser()
-	parser.add_argument("--demo", action="store_true", help="whether use demo catalysts")
+	parser.add_argument("--demo", action="store_true", help="use demo catalysts")
 	args = parser.parse_args()
 
 	if args.demo:
 		demo_graphs()
 	else:
 		user_graphs()
+
