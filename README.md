@@ -103,6 +103,21 @@ in which `property` column should exist and true values should be included in `p
 The sequence of true values should be consistent with that of filenames in `user_catalysts`, e.g., 0, 1, etc.,
 as shown in `property_user.csv` file preloaded by authors.
 Users should delete all true values in `property_user.csv` file before write their own ones.
+The items in `property_user.csv` look like:
+
+```csv
+catalyst,property
+0,-0.91042
+1,-1.00937
+2,-1.31019
+3,-0.94894
+4,-1.21849
+5,-0.84482
+6,-0.81984
+7,-0.32033
+8,-0.25339
+9,-0.27137
+```
 
 Using:
 ```bash
