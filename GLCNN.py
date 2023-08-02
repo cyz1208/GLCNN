@@ -190,7 +190,7 @@ def build_model(kernel_nums, kernel_sizes, fc_sizes, dropout_rate):
 	                       fc_sizes=fc_sizes, dropout_rate=dropout_rate)
 	model = tf.keras.Model(inputs=[Input_1, Input_2], outputs=[Output])
 	# model.summary()
-	opt = tf.keras.optimizers.Adam(learning_rate=0.0001)
+	opt = tf.keras.optimizers.Adam(learning_rate=0.0001, weight_decay=None)
 	model.compile(optimizer=opt, loss='mse', metrics=['mae'])
 	return model
 
@@ -278,13 +278,13 @@ if __name__ == '__main__':
 	parser.add_argument("-r", "--repeat", type=int, default=20, help="DA iterations with maximum of 20")
 	parser.add_argument("-e", "--epoch", type=int, default=200, help="epoch of model training")
 
-	parser.add_argument("--kernel_nums", type=tuple, default=(6, 16, 120),
-	                    help="numbers of each CNN kernel, e.g., (6, 16, 120).")
-	parser.add_argument("--kernel_sizes", type=tuple, default=(5, 5, 5),
-	                    help="sizes of each CNN kernel, e.g., (5, 5, 5).")
-	parser.add_argument("--fc_sizes", type=tuple, default=(2000, 200, 1),
-	                    help="sizes of each fc layer, e.g., (2000, 200, 1). for regression task, the last one is 1.")
-	parser.add_argument("--dropout_rate", type=tuple, default=0.2,
+	parser.add_argument("--kernel_nums", type=list, default=[6, 16, 120], nargs="+",
+	                    help="numbers of each CNN kernel, e.g., 6, 16, 120.")
+	parser.add_argument("--kernel_sizes", type=list, default=[5, 5, 5], nargs="+",
+	                    help="sizes of each CNN kernel, e.g., 5, 5, 5.")
+	parser.add_argument("--fc_sizes", type=list, default=[2000, 200, 1], nargs="+",
+	                    help="sizes of each fc layer, e.g., 2000, 200, 1. for regression task, the last one is 1.")
+	parser.add_argument("--dropout_rate", type=float, default=0.2,
 	                    help="rate of dropout for fc layers, e.g., 0.2.")
 	args = parser.parse_args()
 
@@ -298,9 +298,9 @@ if __name__ == '__main__':
 	REPEAT = args.repeat
 	EPOCH = args.epoch
 
-	KERNEL_NUMS = args.kernel_nums
-	KERNEL_SIZES = args.kernel_sizes
-	FC_SIZES = args.fc_sizes
+	KERNEL_NUMS = [int("".join(i)) for i in args.kernel_nums]
+	KERNEL_SIZES = [int("".join(i)) for i in args.kernel_sizes]
+	FC_SIZES = [int("".join(i)) for i in args.fc_sizes]
 	DROPOUT = args.dropout_rate
 
 	X_train_1, X_train_2, aug_y_train, X_val_1, X_val_2, aug_y_val,\

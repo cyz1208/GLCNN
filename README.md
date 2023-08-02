@@ -92,7 +92,7 @@ The scripts will read structures in `user_catalysts`.
 After generations of grids and descriptors, train and test GLCNN:
 
 ```bash
-python GLCNN.py --demo --batch=256 --repeat=20 --epoch=200
+python GLCNN.py --demo --batch 256 --repeat 20 --epoch 200
 ```
 
 `GLCNN.py` train and test GLCNN using generated inputs `graphs.pkl` and `pixels.pkl`. 
@@ -117,6 +117,11 @@ catalyst,property
 7,-0.32033
 8,-0.25339
 9,-0.27137
+```
+
+Users can define their own hyperparameters using following flags:
+```bash
+python GLCNN.py --kernel_nums 6 12 100 --kernel_size 5 5 5 --fc_sizes 2000 1000 200 1 --dropout_rate 0.3
 ```
 
 Using:
