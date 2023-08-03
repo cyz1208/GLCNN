@@ -198,7 +198,7 @@ def build_model(shape_1, shape_2, kernel_nums, kernel_sizes, fc_sizes, dropout_r
 	                       fc_sizes=fc_sizes, dropout_rate=dropout_rate)
 	model = tf.keras.Model(inputs=[Input_1, Input_2], outputs=[Output])
 	# model.summary()
-	opt = tf.keras.optimizers.Adam(learning_rate=0.0001, weight_decay=None)
+	opt = tf.keras.optimizers.Adam(learning_rate=0.0001)
 	model.compile(optimizer=opt, loss='mse', metrics=['mae'])
 	return model
 
