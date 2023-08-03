@@ -121,7 +121,7 @@ catalyst,property
 
 Users can define their own hyperparameters using following flags:
 ```bash
-python GLCNN.py --kernel_nums 6 12 100 --kernel_size 5 5 5 --fc_sizes 2000 1000 200 1 --dropout_rate 0.3
+python GLCNN.py --kernel_nums 6_12_100 --kernel_size 5_5_5 --fc_sizes 2000_1000_200_1 --dropout_rate 0.3
 ```
 
 Using:

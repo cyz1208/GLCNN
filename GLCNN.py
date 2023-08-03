@@ -1,17 +1,21 @@
+import argparse
+import datetime
 import functools
-import os, warnings
-import numpy as np
+import os
 import pickle
-import pandas as pd
 import time
+import warnings
+from typing import Iterable
+
+import numpy as np
+import pandas as pd
 import tensorflow as tf
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import scale
-from sklearn.metrics import mean_absolute_error, mean_squared_error
-from graph import Utils
-import datetime
+
 import CNN
-import argparse
+from graph import Utils
 
 # tf.debugging.set_log_device_placement(True)
 
@@ -132,13 +136,17 @@ def load_data(demo):
 	return np.array(X_1), np.array(X_2), np.array(y)
 
 
-def data_process(repeat, demo):
+def data_process(repeat: int, demo: bool, channels: Iterable):
 	"""
-	split train, validation and test set.
+	split data.
+	:param repeat: DA iterations.
+	:param demo: use demo data or not
+	:param channels: channels of grid
+	:return:
 	"""
 	# load data
 	X_1, X_2, aug_y = load_data(demo=demo)
-	# X_1 = X_1[:, :, :, [0, 1, 2, 4, 5]]  # select desired channels
+	X_1 = X_1[:, :, :, list(channels)]  # select desired channels
 
 	origin_len = int(len(aug_y) / 20)
 	index = np.array(list(range(origin_len)))
@@ -174,7 +182,7 @@ def data_process(repeat, demo):
 		X_test_1, X_test_2, aug_y_test, y_origin
 
 
-def build_model(kernel_nums, kernel_sizes, fc_sizes, dropout_rate):
+def build_model(shape_1, shape_2, kernel_nums, kernel_sizes, fc_sizes, dropout_rate):
 	"""
 	model construction.
 	:param kernel_nums: numbers of kernels of each CNN layer
@@ -183,8 +191,8 @@ def build_model(kernel_nums, kernel_sizes, fc_sizes, dropout_rate):
 	:param dropout_rate: dropout
 	:return: GLCNN model
 	"""
-	Input_1 = tf.keras.layers.Input(shape=(32, 32, 6))
-	Input_2 = tf.keras.layers.Input(shape=(15,))
+	Input_1 = tf.keras.layers.Input(shape=shape_1)
+	Input_2 = tf.keras.layers.Input(shape=shape_2)
 	Output = CNN.wide_deep(Input_1, Input_2,
 	                       kernel_nums=kernel_nums, kernel_sizes=kernel_sizes,
 	                       fc_sizes=fc_sizes, dropout_rate=dropout_rate)
@@ -278,14 +286,19 @@ if __name__ == '__main__':
 	parser.add_argument("-r", "--repeat", type=int, default=20, help="DA iterations with maximum of 20")
 	parser.add_argument("-e", "--epoch", type=int, default=200, help="epoch of model training")
 
-	parser.add_argument("--kernel_nums", type=list, default=[6, 16, 120], nargs="+",
-	                    help="numbers of each CNN kernel, e.g., 6, 16, 120.")
-	parser.add_argument("--kernel_sizes", type=list, default=[5, 5, 5], nargs="+",
-	                    help="sizes of each CNN kernel, e.g., 5, 5, 5.")
-	parser.add_argument("--fc_sizes", type=list, default=[2000, 200, 1], nargs="+",
-	                    help="sizes of each fc layer, e.g., 2000, 200, 1. for regression task, the last one is 1.")
+	parser.add_argument("--kernel_nums", type=str, default="6_16_120",
+	                    help="numbers of each CNN kernel, e.g., 6_16_120.")
+	parser.add_argument("--kernel_sizes", type=str, default="5_5_5",
+	                    help="sizes of each CNN kernel, e.g., 5_5_5.")
+	parser.add_argument("--fc_sizes", type=str, default="2000_200_1",
+	                    help="sizes of each fc layer, e.g., 2000_200_1. for regression task, the last one is 1.")
 	parser.add_argument("--dropout_rate", type=float, default=0.2,
 	                    help="rate of dropout for fc layers, e.g., 0.2.")
+	parser.add_argument("--channels", type=str, default="0_1_2_3_4_5",
+	                    help="channels of grid, where 0, 1, 2, 3, 4, 5 denote height, atomic number, "
+	                         "electro-negativity, period, group in periodic table and atomic radius respectively."
+	                         "example: 0_1 for channels of height and atomic number only.")
+
 	args = parser.parse_args()
 
 	ROOT_DIR = os.getcwd()
@@ -298,15 +311,17 @@ if __name__ == '__main__':
 	REPEAT = args.repeat
 	EPOCH = args.epoch
 
-	KERNEL_NUMS = [int("".join(i)) for i in args.kernel_nums]
-	KERNEL_SIZES = [int("".join(i)) for i in args.kernel_sizes]
-	FC_SIZES = [int("".join(i)) for i in args.fc_sizes]
+	KERNEL_NUMS = [int(i) for i in args.kernel_nums.split("_")]
+	KERNEL_SIZES = [int(i) for i in args.kernel_sizes.split("_")]
+	FC_SIZES = [int(i) for i in args.fc_sizes.split("_")]
 	DROPOUT = args.dropout_rate
+	CHANNELS = [int(i) for i in args.channels.split("_")]
 
 	X_train_1, X_train_2, aug_y_train, X_val_1, X_val_2, aug_y_val,\
-		X_test_1, X_test_2, aug_y_test, y_origin = data_process(REPEAT, demo=DEMO)
+		X_test_1, X_test_2, aug_y_test, y_origin = data_process(REPEAT, demo=DEMO, channels=CHANNELS)
 
-	model = build_model(kernel_nums=KERNEL_NUMS, kernel_sizes=KERNEL_SIZES,
+	model = build_model(X_test_1.shape[1:], X_test_2.shape[1:],
+	                    kernel_nums=KERNEL_NUMS, kernel_sizes=KERNEL_SIZES,
 	                    fc_sizes=FC_SIZES, dropout_rate=DROPOUT)
 
 	train_model(model, [X_train_1, X_train_2], aug_y_train,
