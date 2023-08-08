@@ -20,7 +20,7 @@ and install all prerequisites:
 
 ```bash
 conda upgrade conda
-conda create --name GLCNN python=3.8 -c conda-forge
+conda create --name GLCNN python=3.7 -c conda-forge
 ```
 
 This creates a conda environment for running GLCNN. 
@@ -34,10 +34,8 @@ source activate GLCNN
 After activating the environment, tensorflow 2.6 for GPU is needed:
 
 ```bash
-conda install tensorflow-gpu=2.6 cudatoolkit=11.3 cudnn=8.2
+conda install tensorflow-gpu==2.6.0
 ```
-
-The above three versions should be compatible with each other.
 
 If GPU is not available, use CPU-version tensorflow instead:
 
@@ -50,13 +48,13 @@ However, the training of GLCNN is far more efficient when using GPU.
 The installation of pymatgen is as following:
 
 ```bash
-conda install --channel conda-froge pymatgen
+conda install --channel conda-forge pymatgen
 ```
 
 The other prerequisites installed via pip:
 
 ```bash
-pip install scikit-learn networkx pickle matplotlib
+pip install -r requirements.txt
 ```
 
 Then, in directory `GLCNN`, you can test GLCNN by running:
