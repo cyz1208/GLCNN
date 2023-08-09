@@ -1,13 +1,14 @@
-import networkx as nx
-import numpy as np
-from pymatgen.io.vasp.inputs import Poscar
-from pymatgen.core.periodic_table import Element
+import argparse
 import os
 import pickle
 import warnings
-from get_features import features
-import argparse
 
+import networkx as nx
+import numpy as np
+from pymatgen.core.periodic_table import Element
+from pymatgen.io.vasp.inputs import Poscar
+
+from get_features import features
 
 substrates = ['SV', 'SV_1N', 'SV_2N', 'SV_3N',
               'DV', 'DV_1N', 'DV_2N_1', 'DV_2N_2', 'DV_3N', 'DV_4N',
@@ -33,8 +34,6 @@ class Utils:
 	@staticmethod
 	def draw_graph(g):
 		nx.draw_networkx(g, pos=nx.spring_layout(g))
-
-	# plt.show()
 
 	@staticmethod
 	def load_graphs(filename):

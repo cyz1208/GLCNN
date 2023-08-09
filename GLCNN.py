@@ -25,7 +25,7 @@ if gpus:
 	try:
 		tf.config.experimental.set_virtual_device_configuration(
 			gpus[0],
-			# [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024 * 6)],
+			[tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024 * 24)],
 		)
 		logical_gpus = tf.config.experimental.list_logical_devices('GPU')
 		print(f"{len(gpus)} Physical GPUs, {len(logical_gpus)} Logical GPUs.")
@@ -74,14 +74,6 @@ def data_augmentation_y(y, times=20):
 		for _ in range(times):
 			y_tmp.append(i)
 	return np.array(y_tmp)
-
-
-def average_pred_y(pred_y):
-	"""
-	average MAE of augmented data
-	input shape: [batch * 20], return shape: [batch]
-	"""
-	return np.average(pred_y.reshape((-1, 20)), axis=-1)
 
 
 @timer
@@ -230,18 +222,18 @@ def train_model(model, X_train, y_train, X_val, y_val, epoch, batch, model_ckpt,
 
 	start = time.perf_counter()
 	model.fit(X_train, y_train,
-			batch_size=batch,
-			epochs=epoch, verbose=2, shuffle=True,
-			# validation_split=0.2,
-			validation_data=(X_val, y_val),
-			callbacks=[
-			tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=5),
-			# tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=10, verbose=2),
-			tf.keras.callbacks.ModelCheckpoint(model_ckpt, save_best_only=True, verbose=2, monitor="val_mae"),
-			# tf.keras.callbacks.ReduceLROnPlateau(factor=0.5, patience=5,
-				# min_lr=0.0001, verbose=2, monitor="val_loss"),
-			warmup_lr,
-	])
+	          batch_size=batch,
+	          epochs=epoch, verbose=2, shuffle=True,
+	          # validation_split=0.2,
+	          validation_data=(X_val, y_val),
+	          callbacks=[
+		          tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=5),
+		          # tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=10, verbose=2),
+		          tf.keras.callbacks.ModelCheckpoint(model_ckpt, save_best_only=True, verbose=2, monitor="val_mae"),
+		          # tf.keras.callbacks.ReduceLROnPlateau(factor=0.5, patience=5,
+		          #                                      min_lr=0.0001, verbose=2, monitor="val_loss"),
+		          warmup_lr,
+	          ])
 	end = time.perf_counter()
 	print(f"model train time consumed: {np.round(end - start, decimals=3)} sec.")
 

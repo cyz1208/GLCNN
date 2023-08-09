@@ -1,44 +1,29 @@
-import numpy as np
-import pickle
-import matplotlib.pyplot as plt
-import os
-import warnings
-from pymatgen.io.vasp.inputs import Poscar
-from pymatgen.core.periodic_table import Element
-import tensorflow as tf
-from scipy.ndimage import gaussian_filter
 import argparse
+import os
+import pickle
+import warnings
 
+import numpy as np
+import tensorflow as tf
+from pymatgen.core.periodic_table import Element
+from pymatgen.io.vasp.inputs import Poscar
+from scipy.ndimage import gaussian_filter
 
 substrates = ['SV', 'SV_1N', 'SV_2N', 'SV_3N',
-			  'DV', 'DV_1N', 'DV_2N_1', 'DV_2N_2', 'DV_3N', 'DV_4N',
-			  'HV', 'HV_1N', 'HV_2N_1', 'HV_2N_2', 'HV_3N', 'HV_4N']
+              'DV', 'DV_1N', 'DV_2N_1', 'DV_2N_2', 'DV_3N', 'DV_4N',
+              'HV', 'HV_1N', 'HV_2N_1', 'HV_2N_2', 'HV_3N', 'HV_4N']
 # substrates = ['SV_3N']
 elements = ['Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn',
-			'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag',
-			'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au']
+            'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag',
+            'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au']
 # elements = ['Pt']
 meshs = ['42', '24', '22', '42_2']
 # meshs = ['22']
 add_Ns = ['0N', '1N', '2N', '3N']
 # add_Ns = ['3N']
 d_metals = {'Sc': 1, 'Ti': 2, 'V': 3, 'Cr': 5, 'Mn': 5, 'Fe': 6, 'Co': 7, 'Ni': 8, 'Cu': 10, 'Zn': 10,
-			'Y': 1, 'Zr': 2, 'Nb': 4, 'Mo': 5, 'Tc': 5, 'Ru': 7, 'Rh': 8, 'Pd': 10, 'Ag': 10, 'Cd': 10,
-			'Hf': 2, 'Ta': 3, 'W': 4, 'Re': 5, 'Os': 6, 'Ir': 7, 'Pt': 9, 'Au': 10}
-
-
-def atomic_distance(i, j):
-	return (Element(i.specie).atomic_radius + Element(j.specie).atomic_radius) * 1.2
-
-
-def visualize_data(X):
-	"""
-	X: [height, width, channel]
-	"""
-	for _i in range(X.shape[-1]):
-		plt.subplot(2, 3, _i + 1)
-		plt.imshow(X[:, :, _i], cmap='viridis')
-	plt.show()
+            'Y': 1, 'Zr': 2, 'Nb': 4, 'Mo': 5, 'Tc': 5, 'Ru': 7, 'Rh': 8, 'Pd': 10, 'Ag': 10, 'Cd': 10,
+            'Hf': 2, 'Ta': 3, 'W': 4, 'Re': 5, 'Os': 6, 'Ir': 7, 'Pt': 9, 'Au': 10}
 
 
 def expand_cell(struct, size, grid):
@@ -85,7 +70,7 @@ def add_gaussian_blur(image, sigma=1.5):
 	"""
 	add Gaussian blur to every channel
 	"""
-	# decomposite channels dimension
+	# decompose channels dimension
 	decomp_image = [image[:, :, i] for i in range(image.shape[-1])]
 	for index, i in enumerate(decomp_image):
 		decomp_image[index] = gaussian_filter(i, sigma=sigma)
@@ -133,7 +118,7 @@ def pixel(filepath, size=(128, 128, 6), grid=0.20, sigma=1.5, demo=True):
 		# atomic number
 		element = Element(site.specie)
 		image[np.int(index_x)][np.int(index_y)][1] = element.Z
-		# image[np.int(index_x)][np.int(index_y)][1] = 2 if element.Z == 6 else element.Z
+		# image[np.int(index_x)][np.int(index_y)][1] = 14 if element.Z == 7 else element.Z
 		# electronegativity
 		image[np.int(index_x)][np.int(index_y)][2] = element.X
 		# row
@@ -159,10 +144,9 @@ def data_augmentation(images):
 						[16, 12], [16, 8], [16, 4]])
 	vectors = vectors * 2
 
-	print('data augmentation ...')
 	images_new = []
 	for name, image in images:
-		print(name)
+		print(f'data augmentation: {name}')
 		# translate image
 		crop_images = np.array([tf.image.crop_to_bounding_box(image, i, j, 64, 64).numpy() for i, j in vectors])
 		# flip image
