@@ -162,7 +162,7 @@ def demo_graphs():
 					G.append(g)
 	print(f"total graphs: {len(G)}")
 
-	with open(os.path.join(root_dir, "data/graphs.pkl"), "wb") as f:
+	with open(os.path.join(root_dir, "demo_data/graphs.pkl"), "wb") as f:
 		pickle.dump(G, f)
 	print("DONE")
 
@@ -182,7 +182,7 @@ def user_graphs():
 		G.append(g)
 	print(f"total graphs: {len(G)}")
 
-	with open(os.path.join(root_dir, "data/graphs.pkl"), "wb") as f:
+	with open(os.path.join(root_dir, "user_data/graphs.pkl"), "wb") as f:
 		pickle.dump(G, f)
 	print("DONE")
 

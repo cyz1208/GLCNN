@@ -82,10 +82,12 @@ def load_data(demo):
 	load DA graphs, grids and outputs
 	"""
 	clean_name = data_clean('./structure.log')
+	data_dir = "demo_data" if demo else "user_data"
 
 	# DA grid
+	print(f"reading data from {f'./{data_dir}/pixels.pkl'}")
 	X_1 = []
-	with open('./data/pixels.pkl', 'rb') as f:
+	with open(f'./{data_dir}/pixels.pkl', 'rb') as f:
 		pixels = pickle.load(f)
 	for name, pixel in pixels:
 		# data clean
@@ -93,11 +95,12 @@ def load_data(demo):
 			continue
 		if '' in name:   # developer mode
 			X_1.append(pixel)
-	print(f"total X_1 data: {np.shape(X_1)}")
+	print(f"total pixel data: {np.shape(X_1)}")
 
 	# DA graph and descriptor
+	print(f"reading data from {f'./{data_dir}/graphs.pkl'}")
 	X_2 = []
-	G = Utils.load_graphs('./data/graphs.pkl')
+	G = Utils.load_graphs(f'./{data_dir}/graphs.pkl')
 	for g in G:
 		if g.name.split() in clean_name:
 			continue
@@ -106,21 +109,20 @@ def load_data(demo):
 	X_2 = np.array(X_2)
 	X_2 = scale(X_2)
 	X_2 = data_augmentation_y(X_2)
-	print(f"total X_2 data: {np.shape(X_2)}")
+	print(f"total graph data: {np.shape(X_2)}")
 
 	# DA outputs
+	print(f"reading data from {f'./{data_dir}/properties.csv'}")
 	y = []
-	if demo:
-		db = read_csv("./property_demo.csv")
-		for _, datum in db.iterrows():
-			# data clean
+	db = read_csv(f'./{data_dir}/properties.csv')
+	for _, datum in db.iterrows():
+		# data clean
+		if demo:
 			if [datum['mesh'], datum['add_N'], datum['sub'], datum['metal']] in clean_name:
 				continue
 			if '' in datum['mesh']:   # developer mode
 				y.append(datum['property'])
-	else:
-		db = read_csv("./property_user.csv")
-		for _, datum in db.iterrows():
+		else:
 			y.append(datum['property'])
 
 	y = data_augmentation_y(y)
@@ -144,8 +146,8 @@ def data_process(repeat: int, demo: bool, channels: Iterable):
 	index = np.array(list(range(origin_len)))
 
 	# Randomly generate the index of train, val and test set
-	train_index, test_index = train_test_split(index, test_size=0.2, random_state=42, shuffle=True)
-	val_index, test_index = train_test_split(test_index, test_size=0.5, random_state=42, shuffle=True)
+	train_index, test_index = train_test_split(index, test_size=0.2, random_state=None, shuffle=True)
+	val_index, test_index = train_test_split(test_index, test_size=0.5, random_state=None, shuffle=True)
 
 	# Generate the index of train, val and test set after DA
 	rand_index = np.random.choice(list(range(repeat)), size=repeat, replace=False)
@@ -174,20 +176,21 @@ def data_process(repeat: int, demo: bool, channels: Iterable):
 		X_test_1, X_test_2, aug_y_test, y_origin
 
 
-def build_model(shape_1, shape_2, kernel_nums, kernel_sizes, fc_sizes, dropout_rate):
+def build_model(shape_1, shape_2, kernel_nums, kernel_sizes, fc_sizes, dropout_rate, activation):
 	"""
 	model construction.
 	:param kernel_nums: numbers of kernels of each CNN layer
 	:param kernel_sizes: sizes of kernels of  each CNN layer
 	:param fc_sizes: size of each FC layer except for the final FC layer
 	:param dropout_rate: dropout
+	:param activation: activation function
 	:return: GLCNN model
 	"""
 	Input_1 = tf.keras.layers.Input(shape=shape_1)
 	Input_2 = tf.keras.layers.Input(shape=shape_2)
 	Output = CNN.wide_deep(Input_1, Input_2,
 	                       kernel_nums=kernel_nums, kernel_sizes=kernel_sizes,
-	                       fc_sizes=fc_sizes, dropout_rate=dropout_rate)
+	                       fc_sizes=fc_sizes, dropout_rate=dropout_rate, activation=activation)
 	model = tf.keras.Model(inputs=[Input_1, Input_2], outputs=[Output])
 	# model.summary()
 	opt = tf.keras.optimizers.Adam(learning_rate=0.0001)
@@ -290,6 +293,8 @@ if __name__ == '__main__':
 	                    help="channels of grid, where 0, 1, 2, 3, 4, 5 denote height, atomic number, "
 	                         "electro-negativity, period, group in periodic table and atomic radius respectively."
 	                         "example: 0_1 for channels of height and atomic number only.")
+	parser.add_argument("--activation", type=str, default="relu",
+	                    help="activation function, relu, elu, leaky_relu ...")
 
 	args = parser.parse_args()
 
@@ -308,13 +313,14 @@ if __name__ == '__main__':
 	FC_SIZES = [int(i) for i in args.fc_sizes.split("_")]
 	DROPOUT = args.dropout_rate
 	CHANNELS = [int(i) for i in args.channels.split("_")]
+	ACTIVATION = args.activation
 
 	X_train_1, X_train_2, aug_y_train, X_val_1, X_val_2, aug_y_val,\
 		X_test_1, X_test_2, aug_y_test, y_origin = data_process(REPEAT, demo=DEMO, channels=CHANNELS)
 
 	model = build_model(X_test_1.shape[1:], X_test_2.shape[1:],
 	                    kernel_nums=KERNEL_NUMS, kernel_sizes=KERNEL_SIZES,
-	                    fc_sizes=FC_SIZES, dropout_rate=DROPOUT)
+	                    fc_sizes=FC_SIZES, dropout_rate=DROPOUT, activation=ACTIVATION)
 
 	train_model(model, [X_train_1, X_train_2], aug_y_train,
 	            [X_val_1, X_val_2], aug_y_val,

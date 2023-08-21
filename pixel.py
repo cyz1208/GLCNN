@@ -197,7 +197,7 @@ def demo_pixels():
 	images = data_augmentation(images_origin)
 	print(f"DA shape: {images.shape}, {images[0][1].shape}")
 
-	with open(os.path.join(root_dir, "data/pixels.pkl"), 'wb') as f:
+	with open(os.path.join(root_dir, "demo_data/pixels.pkl"), 'wb') as f:
 		pickle.dump(images, f)  # images is a list of tuple containing name `str` and pixel `np.ndarray`
 	print("DONE")
 
@@ -222,7 +222,7 @@ def user_pixels():
 	images = data_augmentation(images_origin)
 	print(f"DA shape: {images.shape}, {images[0][1].shape}")
 
-	with open(os.path.join(root_dir, "data/pixels.pkl"), 'wb') as f:
+	with open(os.path.join(root_dir, "user_data/pixels.pkl"), 'wb') as f:
 		pickle.dump(images, f)  # images is a list of tuple containing name `str` and pixel `np.ndarray`
 	print("DONE")
 
